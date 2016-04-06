@@ -3,6 +3,21 @@ module ExercismWeb
     class Sessions < Core
       register ExercismWeb::Routes::GithubCallback
 
+      get '/api_login/?*' do
+        unless params[:code]
+          halt 400, "Must provide parameter 'code'"
+        end
+
+        begin
+          user = Authentication.perform(params[:code], github_client_id, github_client_secret, nil)
+        rescue StandardError => e
+          Bugsnag.notify(e, nil, request)
+          json error: "We're having trouble with logins right now. Please come back later."
+        end
+
+        json user.to_json
+      end
+      
       get '/please-login' do
         erb :"auth/please_login", locals: {return_path: params[:return_path]}
       end
