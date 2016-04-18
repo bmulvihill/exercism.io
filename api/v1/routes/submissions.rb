@@ -1,6 +1,28 @@
 module ExercismAPI
   module Routes
     class Submissions < Core
+      # Download all iterations
+      get '/submissions/:language/:slug/iterations' do |language, slug|
+        require_key
+
+        if current_user.guest?
+          halt 401, {error: "Please double-check your exercism API key."}.to_json
+        end
+
+        submissions = current_user.submissions.where(language: language, slug: slug)
+        if submissions.nil?
+          halt 404, {error: "No solutions found for exercise '#{slug}' in #{language}"}.to_json
+        end
+
+        submissions.map do |s|
+          {
+            submission: s,
+            comments: s.comments
+          }
+        end.to_json
+
+      end
+
       # Return the URL of the most recent iteration.
       # Called by the CLI.
       get '/submissions/:language/:slug' do |language, slug|
